@@ -19,64 +19,6 @@
 var frame_time = 60/1000; // run the local game at 16ms/ 60hz
 if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 22hz
 
-var WALL_SIZE_CONSTANT = 10;
-    var TILE_SIZE_CONSTANT = 10;
-
-var game_wall = function(x, y, orientation, length) {
-        this.x = x;
-        this.y = y;
-        this.orientation = orientation;
-        this.length = length;
-        this.wall_color = "#0000F0";
-        this.visible = true;
-        //alert('Wall: ' + x + ' ' + y);
-    };
-
-    var WALL_SIZE_CONSTANT = 10;
-    var TILE_SIZE_CONSTANT = 10;
-
-var game_tile = function(x, y, wall){
-        this.x = x;
-        this.y = y;
-        this.tile_color = "FF0F00";
-        this.wall = wall;
-    }
-
-var level_1 = function(){
-        this.title = 'Level 1 - Start';
-        this.hostStartX = 25;
-        this.hostStartY = 25;
-        this.otherStartX = 25;
-        this.otherStartY = 125;
-        this.walls = [];
-        this.tiles = [];
-        //1 = horizontal, 0 = vertical
-        /*this.walls[0] = new game_wall(50,50,1,450);
-        this.walls[1] = new game_wall(50,50,0,250);
-        this.walls[2] = new game_wall(50,300,1,450);
-        this.walls[3] = new game_wall(300,50,0,115);
-        this.walls[4] = new game_wall(300,195,0,115);
-        this.walls[5] = new game_wall(500,50,0,115);
-        this.walls[6] = new game_wall(500,195,0,115);
-        this.walls[7] = new game_wall(500,165,1,75);
-        this.walls[8] = new game_wall(575,165,0,225);*/
-        this.walls[0] = new game_wall(20, 20, 1, 600);
-        this.walls[1] = new game_wall(20, 20, 0, 400);
-        this.walls[2] = new game_wall(320, 20, 0, 90);
-        this.walls[3] = new game_wall(320, 150, 0, 140);
-        this.walls[4] = new game_wall(320, 330, 0, 100);
-        //this.walls[2] = new game_wall(320, 20, 0, 400 + WALL_SIZE_CONSTANT);
-        this.walls[5] = new game_wall(20, 420, 1, 600);
-        //this.walls[5].visible = false;
-        this.walls[6] = new game_wall(620, 20, 0, 400 + WALL_SIZE_CONSTANT);
-        this.walls[7] = new game_wall(20, 220, 1, 310);
-    
-        //Tiles
-        this.tiles[0] = new game_tile(50, 75, this.walls[5]);
-    };
-
-var level_3 = new level_1();
-
 ( function () {
 
     var lastTime = 0;
@@ -265,7 +207,7 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
         this.game = game_instance;
 
         //added by us
-        this.currentlevel = level_3;
+        this.currentlevel = new level_1();
         this.blinkFlag = false;
         this.prevColor = 'rgba(255,255,255,0.1)';
         //finish added by us
@@ -329,72 +271,67 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
 //CODE WE ADDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    var WALL_SIZE_CONSTANT = 10;
 
-    //******************************************************** Game Tile
-
-    game_tile.prototype.draw = function(){
-
-       // alert('In the draw method');
-        var width = TILE_SIZE_CONSTANT;
-        var height = TILE_SIZE_CONSTANT;
-        
-        //Set the color for this wall
-        game.ctx.fillStyle = this.tile_color;
-        //Draw a rectangle for us
-        game.ctx.fillRect(this.x, this.y, width, height);    
+    var game_wall = function(x, y, orientation, length) {
+        this.x = x;
+        this.y = y;
+        this.orientation = orientation;
+        this.length = length;
+        this.color = 'rgba(255,100,255,0.1)';
+        //alert('Wall: ' + x + ' ' + y);
     };
-
-    
-    //***********************************************************************************
 
      game_wall.prototype.draw = function(){
 
-        if(this.visible){
        // alert('In the draw method');
-            var width = WALL_SIZE_CONSTANT;
-            var height = WALL_SIZE_CONSTANT;
+        var width = WALL_SIZE_CONSTANT;
+        var height = WALL_SIZE_CONSTANT;
                 //true = vertical
-         if(this.orientation){
-                width = this.length;
+        if(this.orientation){
+            width = this.length;
 
-            }else{
-             height = this.length;
-            }
-            //Set the color for this wall
-            game.ctx.fillStyle = this.wall_color;
-         //Draw a rectangle for us
-          game.ctx.fillRect(this.x, this.y, width, height);
+        }else{
+            height = this.length;
         }
+        //Set the color for this wall
+        game.ctx.fillStyle = "#00FF00";
+        //Draw a rectangle for us
+        game.ctx.fillRect(this.x, this.y, width, height);
         //game.ctx.fillRect(this.x, this.y, width, height );
         //alert('end draw');
+    
     };
 
-    
-    //*******************************************************************************level!
-
-    var tile_check = function(player, tile){
-        if(player.pos.x -  player.size.hx < tile.x){
-            if (player.pos.x - player.size.hx - tile.x > -player.size.x && 
-                player.pos.y - player.size.hy + player.size.y > tile.y  &&
-                player.pos.y - player.size.hy < tile.y + TILE_SIZE_CONSTANT ){
-                    
-                    if (tile.tile_color == "FF0000"){
-                        console.log("Color is FF0000");
-                        tile.tile_color = "FF0000";
-                        level_3.tiles[0] = tile;
-                    }
-                    else {
-                tile.tile_color = "FF0000";
-            }
-            }
-        }
+    var level_1 = function(){
+        this.title = 'Level 1 - Start';
+        this.hostStartX = 25;
+        this.hostStartY = 25;
+        this.otherStartX = 25;
+        this.otherStartY = 125;
+        this.walls = [];
+        //1 = horizontal, 0 = vertical
+        /*this.walls[0] = new game_wall(50,50,1,450);
+        this.walls[1] = new game_wall(50,50,0,250);
+        this.walls[2] = new game_wall(50,300,1,450);
+        this.walls[3] = new game_wall(300,50,0,115);
+        this.walls[4] = new game_wall(300,195,0,115);
+        this.walls[5] = new game_wall(500,50,0,115);
+        this.walls[6] = new game_wall(500,195,0,115);
+        this.walls[7] = new game_wall(500,165,1,75);
+        this.walls[8] = new game_wall(575,165,0,225);*/
+        this.walls[0] = new game_wall(20, 20, 1, 600);
+        this.walls[1] = new game_wall(20, 20, 0, 400);
+        this.walls[2] = new game_wall(320, 20, 0, 90);
+        this.walls[3] = new game_wall(320, 150, 0, 140);
+        this.walls[4] = new game_wall(320, 330, 0, 100);
+        //this.walls[2] = new game_wall(320, 20, 0, 400 + WALL_SIZE_CONSTANT);
+        this.walls[5] = new game_wall(20, 420, 1, 600);
+        this.walls[6] = new game_wall(620, 20, 0, 400 + WALL_SIZE_CONSTANT);
+        this.walls[7] = new game_wall(20, 220, 1, 310);
     };
 
     var col_check = function(player, wall){
-    if(!wall.visible){
-        return false;
-    }
-
     if (!wall.orientation){
         if(((player.pos.x - player.size.hx - wall.x > -player.size.x && player.pos.x - player.size.hx - wall.x < 0) || 
             (player.pos.x - player.size.hx - wall.x < 10 && player.pos.x - player.size.hx - wall.x > 0))
@@ -416,8 +353,6 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
             return true;
         };
     };
-    //no collision
-    return false;
 
 };
 
@@ -455,6 +390,7 @@ game_core.prototype.update = function(t) {
     if(!this.server) {
         this.client_update();
     } else {
+        console.log('\t calling server update');
         this.server_update();
     }
 
@@ -582,8 +518,7 @@ game_core.prototype.update_physics = function() {
     //Updated at 15ms , simulates the world state
 game_core.prototype.server_update_physics = function() {
 
-    //grabs the current level for testing of collision
-    var level = level_3;
+    var level = new level_1();
 
     //Handle player one
     this.players.self.old_state.pos = this.pos( this.players.self.pos );
@@ -603,11 +538,6 @@ game_core.prototype.server_update_physics = function() {
     this.players.other.pos = this.v_add( this.players.other.old_state.pos, other_new_dir);
     if( col_checks(this.players.other, level.walls) ){
         this.players.other.pos = this.players.other.old_state.pos;
-    }
-
-    //Check if players collide with tiles
-    if(tile_check(this.players.self, level.tiles[0])){
-        tiles[0].wall.visible = false;
     }
 
         //Keep the physics position in the world
@@ -1041,16 +971,13 @@ game_core.prototype.client_update = function() {
     //CODE WE ADDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //alert('test here');
-    var level = new level_1();
-    var walls = level.walls;
+
+    var temp = new level_1();
+    var walls = temp.walls;
     for(var i = 0; i < walls.length; ++i) {
         walls[i].draw();
        // alert("test");
     } 
-    var tiles = level.tiles;
-    for(var i = 0; i < tiles.length; ++i){
-        tiles[i].draw();
-    }
     
     /*var testWall = new game_wall(50,5,1,20);
     testWall.draw();
