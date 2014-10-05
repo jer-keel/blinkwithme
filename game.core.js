@@ -73,7 +73,7 @@ if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 2
                 other : new game_player(this,this.instance.player_client)
             };
 
-           this.players.self.pos = {x:20,y:20};
+           this.players.self.pos = {x:50,y:50};
 
         } else {
 
@@ -102,7 +102,7 @@ if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 2
             this.ghosts.server_pos_self.state = 'server_pos';
             this.ghosts.server_pos_other.state = 'server_pos';
 
-            this.ghosts.server_pos_self.pos = { x:20, y:20 };
+            this.ghosts.server_pos_self.pos = { x:50, y:50 };
             this.ghosts.pos_other.pos = { x:500, y:200 };
             this.ghosts.server_pos_other.pos = { x:500, y:200 };
         }
@@ -208,6 +208,8 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
 
         //added by us
         this.currentlevel = new level_1();
+        this.blinkFlag = false;
+        this.prevColor = 'rgba(255,255,255,0.1)';
         //finish added by us
 
             //Set up initial values for our state information
@@ -237,8 +239,9 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
             //The 'host' of a game gets created with a player instance since
             //the server already knows who they are. If the server starts a game
             //with only a host, the other player is set up in the 'else' below
+        // this is where the starting location is for new game!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1    
         if(player_instance) {
-            this.pos = { x:20, y:20 };
+            this.pos = { x:50, y:50 };
         } else {
             this.pos = { x:500, y:200 };
         }
@@ -247,7 +250,7 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
   
     game_player.prototype.draw = function(){
 
-            //Set the color for this player
+        //Set the color for this player
         game.ctx.fillStyle = this.color;
 
             //Draw a rectangle for us
@@ -256,6 +259,12 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
             //Draw a status update
         game.ctx.fillStyle = this.info_color;
         game.ctx.fillText(this.state, this.pos.x+10, this.pos.y + 4);
+
+        if(this.blinkFlag === true){
+            //alert(this.prevColor);
+            this.color = this.prevColor;
+            this.blinkFlag = false;
+        }
     
     }; //game_player.draw
 
@@ -296,11 +305,65 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
 
     var level_1 = function(){
         this.title = 'Level 1 - Start';
+        this.hostStartX = 25;
+        this.hostStartY = 25;
+        this.otherStartX = 25;
+        this.otherStartY = 125;
         this.walls = [];
-        this.walls[0] = new game_wall(50,50,1,250);
+        //1 = horizontal, 0 = vertical
+        /*this.walls[0] = new game_wall(50,50,1,450);
         this.walls[1] = new game_wall(50,50,0,250);
+        this.walls[2] = new game_wall(50,300,1,450);
+        this.walls[3] = new game_wall(300,50,0,115);
+        this.walls[4] = new game_wall(300,195,0,115);
+        this.walls[5] = new game_wall(500,50,0,115);
+        this.walls[6] = new game_wall(500,195,0,115);
+        this.walls[7] = new game_wall(500,165,1,75);
+        this.walls[8] = new game_wall(575,165,0,225);*/
+        this.walls[0] = new game_wall(20, 20, 1, 600);
+        this.walls[1] = new game_wall(20, 20, 0, 400);
+        this.walls[2] = new game_wall(320, 20, 0, 90);
+        this.walls[3] = new game_wall(320, 150, 0, 140);
+        this.walls[4] = new game_wall(320, 330, 0, 100);
+        //this.walls[2] = new game_wall(320, 20, 0, 400 + WALL_SIZE_CONSTANT);
+        this.walls[5] = new game_wall(20, 420, 1, 600);
+        this.walls[6] = new game_wall(620, 20, 0, 400 + WALL_SIZE_CONSTANT);
+        this.walls[7] = new game_wall(20, 220, 1, 310);
     };
 
+    var col_check = function(player, wall){
+    if (!wall.orientation){
+        if(((player.pos.x - player.size.hx - wall.x > -player.size.x && player.pos.x - player.size.hx - wall.x < 0) || 
+            (player.pos.x - player.size.hx - wall.x < 10 && player.pos.x - player.size.hx - wall.x > 0))
+            && (player.pos.y - player.size.hy + player.size.y > wall.y && player.pos.y - player.size.hy < wall.y + wall.length)) {
+            //player.pos.x += 0;
+            //alert("What the fuck 2");
+            //this.server_correct(3, 0);
+            console.log("vertical hit");
+            return true;
+        };
+    };
+
+    if (wall.orientation){
+        if(((player.pos.y - player.size.hy - wall.y > -player.size.y && player.pos.y - player.size.hy - wall.y < 0) || 
+            (player.pos.y - player.size.hy - wall.y < 10 && player.pos.y - player.size.hy - wall.y > 0))
+            && (player.pos.x - player.size.hx + player.size.x > wall.x && player.pos.x - player.size.hx < wall.x + wall.length)) {
+            //alert("HIT");
+            console.log("horizontal hit");
+            return true;
+        };
+    };
+
+};
+
+//Runs collision check on all walls and returns true if there was a collision
+    var col_checks = function(player, walls){
+        var value = false;
+        for(var i = 0; i < walls.length; i++){
+            value = value || col_check(player, walls[i]);
+        };
+        return value;
+    };
 //CODE WE ADDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -327,6 +390,7 @@ game_core.prototype.update = function(t) {
     if(!this.server) {
         this.client_update();
     } else {
+        console.log('\t calling server update');
         this.server_update();
     }
 
@@ -397,6 +461,11 @@ game_core.prototype.process_input = function( player ) {
                 if(key == 'u') {
                     y_dir -= 1;
                 }
+                if(key == 'b'){
+                    player.blinkFlag = true;
+                    player.prevColor = player.color;
+                    player.color = '#efff00';
+                }
             } //for all input values
 
         } //for each input command
@@ -429,7 +498,6 @@ game_core.prototype.physics_movement_vector_from_direction = function(x,y) {
 }; //game_core.physics_movement_vector_from_direction
 
 game_core.prototype.update_physics = function() {
-
     if(this.server) {
         this.server_update_physics();
     } else {
@@ -450,15 +518,27 @@ game_core.prototype.update_physics = function() {
     //Updated at 15ms , simulates the world state
 game_core.prototype.server_update_physics = function() {
 
-        //Handle player one
+    var level = new level_1();
+
+    //Handle player one
     this.players.self.old_state.pos = this.pos( this.players.self.pos );
     var new_dir = this.process_input(this.players.self);
     this.players.self.pos = this.v_add( this.players.self.old_state.pos, new_dir );
+
+    //if( col_check(this.players.self, level.walls[0]) ){
+    //    this.players.self.pos = this.players.self.old_state.pos;
+    //}
+    if(col_checks(this.players.self, level.walls)){
+        this.players.self.pos = this.players.self.old_state.pos;
+    }
 
         //Handle player two
     this.players.other.old_state.pos = this.pos( this.players.other.pos );
     var other_new_dir = this.process_input(this.players.other);
     this.players.other.pos = this.v_add( this.players.other.old_state.pos, other_new_dir);
+    if( col_checks(this.players.other, level.walls) ){
+        this.players.other.pos = this.players.other.old_state.pos;
+    }
 
         //Keep the physics position in the world
     this.check_collision( this.players.self );
@@ -565,6 +645,10 @@ game_core.prototype.client_handle_input = function(){
             input.push('u');
 
         } //up
+    if( this.keyboard.pressed('B')) {
+            input.push('b');
+            //alert("Pressed space");
+        } //space bar
 
     if(input.length) {
 
@@ -1061,7 +1145,7 @@ game_core.prototype.client_reset_positions = function() {
     var player_client = this.players.self.host ?  this.players.other : this.players.self;
 
         //Host always spawns at the top left.
-    player_host.pos = { x:20,y:20 };
+    player_host.pos = { x:50,y:50 };
     player_client.pos = { x:500, y:200 };
 
         //Make sure the local player physics is updated
