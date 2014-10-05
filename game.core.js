@@ -19,6 +19,9 @@
 var frame_time = 60/1000; // run the local game at 16ms/ 60hz
 if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 22hz
 
+var global_level;
+var global_game;
+
 ( function () {
 
     var lastTime = 0;
@@ -204,10 +207,15 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
 
             //Store the instance, if any
         this.instance = player_instance;
-        this.game = game_instance;
+        if (!global_game){
+            global_game = game_instance;
+        }
+        this.game = global_game;
 
         //added by us
-        this.currentlevel = new level_1();
+        if (!global_level){
+            global_level = new level_1();
+        }
         this.blinkFlag = false;
         this.prevColor = 'rgba(255,255,255,0.1)';
         //finish added by us
@@ -279,6 +287,15 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
         this.orientation = orientation;
         this.length = length;
         this.color = 'rgba(255,100,255,0.1)';
+        working = true;
+        //alert('Wall: ' + x + ' ' + y);
+    };
+
+    var game_tile = function(x, y, wall) {
+        this.x = x;
+        this.y = y;
+        this.wall = wall;
+        this.color = 'rgba(255,000,000,0.1)';
         //alert('Wall: ' + x + ' ' + y);
     };
 
@@ -295,6 +312,21 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
             height = this.length;
         }
         //Set the color for this wall
+        game.ctx.fillStyle = this.color;
+        //Draw a rectangle for us
+        game.ctx.fillRect(this.x, this.y, width, height);
+        //game.ctx.fillRect(this.x, this.y, width, height );
+        //alert('end draw');
+    
+    };
+
+    game_tile.prototype.draw = function(){
+
+       // alert('In the draw method');
+        var width = WALL_SIZE_CONSTANT;
+        var height = WALL_SIZE_CONSTANT;
+                //true = vertical
+        //Set the color for this wall
         game.ctx.fillStyle = "#00FF00";
         //Draw a rectangle for us
         game.ctx.fillRect(this.x, this.y, width, height);
@@ -310,6 +342,7 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
         this.otherStartX = 25;
         this.otherStartY = 125;
         this.walls = [];
+        this.tiles = [];
         //1 = horizontal, 0 = vertical
         /*this.walls[0] = new game_wall(50,50,1,450);
         this.walls[1] = new game_wall(50,50,0,250);
@@ -329,19 +362,26 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
         this.walls[5] = new game_wall(20, 420, 1, 600);
         this.walls[6] = new game_wall(620, 20, 0, 400 + WALL_SIZE_CONSTANT);
         this.walls[7] = new game_wall(20, 220, 1, 310);
+
+        this.tiles[0] = new game_tile(60, 60, this.walls[0]);
+        console.log(this.tiles[0].x);
     };
 
     var col_check = function(player, wall){
-    if (!wall.orientation){
-        if(((player.pos.x - player.size.hx - wall.x > -player.size.x && player.pos.x - player.size.hx - wall.x < 0) || 
-            (player.pos.x - player.size.hx - wall.x < 10 && player.pos.x - player.size.hx - wall.x > 0))
-            && (player.pos.y - player.size.hy + player.size.y > wall.y && player.pos.y - player.size.hy < wall.y + wall.length)) {
-            //player.pos.x += 0;
-            //alert("What the fuck 2");
-            //this.server_correct(3, 0);
-            console.log("vertical hit");
-            return true;
-        };
+        //console.log("Called");
+        if (!wall.orientation){
+            if(((player.pos.x - player.size.hx - wall.x > -player.size.x && player.pos.x - player.size.hx - wall.x < 0) || 
+                (player.pos.x - player.size.hx - wall.x < 10 && player.pos.x - player.size.hx - wall.x > 0))
+                && (player.pos.y - player.size.hy + player.size.y > wall.y && player.pos.y - player.size.hy < wall.y + wall.length)) {
+                //player.pos.x += 0;
+                //alert("What the fuck 2");
+                //this.server_correct(3, 0);
+                console.log("vertical hit");
+                new_wall = new game_wall(wall.x, wall.y, wall.orientation, wall.length)
+                new_wall.color = 'rgba(000,000,255,0.1)';
+                //walls[0] = new_wall;
+                return true;
+            };
     };
 
     if (wall.orientation){
@@ -364,6 +404,25 @@ game_core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x,
         };
         return value;
     };
+
+     var tile_check = function(player, tile){
+            if(((player.pos.x - player.size.hx - tile.x > -player.size.x && player.pos.x - player.size.hx - tile.x < 0) || 
+                (player.pos.x - player.size.hx - tile.x < 10 && player.pos.x - player.size.hx - tile.x > 0))
+                && (player.pos.y - player.size.hy + player.size.y > tile.y && player.pos.y - player.size.hy < tile.y + 10)) {
+                console.log("WHY");
+                return true;
+        };
+
+    };
+
+function getRandomColor() {
+    var letters = '0123456789ABCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
 //CODE WE ADDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -390,7 +449,7 @@ game_core.prototype.update = function(t) {
     if(!this.server) {
         this.client_update();
     } else {
-        console.log('\t calling server update');
+        //console.log('\t calling server update');
         this.server_update();
     }
 
@@ -462,9 +521,9 @@ game_core.prototype.process_input = function( player ) {
                     y_dir -= 1;
                 }
                 if(key == 'b'){
-                    player.blinkFlag = true;
-                    player.prevColor = player.color;
-                    player.color = '#efff00';
+                    //player.blinkFlag = true;
+                    //player.prevColor = player.color;
+                    player.color = getRandomColor();
                 }
             } //for all input values
 
@@ -518,7 +577,9 @@ game_core.prototype.update_physics = function() {
     //Updated at 15ms , simulates the world state
 game_core.prototype.server_update_physics = function() {
 
-    var level = new level_1();
+    if(!global_level){
+        global_level = new level_1();
+    }
 
     //Handle player one
     this.players.self.old_state.pos = this.pos( this.players.self.pos );
@@ -528,15 +589,24 @@ game_core.prototype.server_update_physics = function() {
     //if( col_check(this.players.self, level.walls[0]) ){
     //    this.players.self.pos = this.players.self.old_state.pos;
     //}
-    if(col_checks(this.players.self, level.walls)){
+    if(col_checks(this.players.self, global_level.walls)){
         this.players.self.pos = this.players.self.old_state.pos;
+    }
+
+    if(tile_check(this.players.self, global_level.tiles[0])){
+        twall = global_level.walls[0];
+        new_wall = new game_wall(twall.x, twall.y, twall.orientation, twall.length)
+        new_wall.color = 'rgba(255,255,255,0.1)';
+        global_level.walls[0] = new_wall;
+        console.log(global_level.walls[0].color);
+        //global_level.walls[0].draw();
     }
 
         //Handle player two
     this.players.other.old_state.pos = this.pos( this.players.other.pos );
     var other_new_dir = this.process_input(this.players.other);
     this.players.other.pos = this.v_add( this.players.other.old_state.pos, other_new_dir);
-    if( col_checks(this.players.other, level.walls) ){
+    if( col_checks(this.players.other, global_level.walls) ){
         this.players.other.pos = this.players.other.old_state.pos;
     }
 
@@ -556,13 +626,25 @@ game_core.prototype.server_update = function(){
         //Update the state of our local clock to match the timer
     this.server_time = this.local_time;
 
+    var hostcolor, clientcolor;
+
+    if(this.players.self.host){
+        hostcolor = this.players.self.color;
+        clientcolor = this.players.other.color; 
+    }else{
+        hostcolor = this.players.other.color;
+        clientcolor = this.players.self.color;
+    }
+
         //Make a snapshot of the current state, for updating the clients
     this.laststate = {
         hp  : this.players.self.pos,                //'host position', the game creators position
         cp  : this.players.other.pos,               //'client position', the person that joined, their position
         his : this.players.self.last_input_seq,     //'host input sequence', the last input we processed for the host
         cis : this.players.other.last_input_seq,    //'client input sequence', the last input we processed for the client
-        t   : this.server_time                      // our current local time on the server
+        t   : this.server_time,                      // our current local time on the server
+        hc  : hostcolor,
+        cc  : clientcolor
     };
 
         //Send the snapshot to the 'host' player
@@ -850,8 +932,13 @@ game_core.prototype.client_onserverupdate_recieved = function(data){
         var player_host = this.players.self.host ?  this.players.self : this.players.other;
         var player_client = this.players.self.host ?  this.players.other : this.players.self;
         var this_player = this.players.self;
-        
-            //Store the server time (this is offset by the latency in the network, by the time we get it)
+
+        if(this.players.self.host){
+            this.players.other.color = data.cc;
+        }else{
+            this.players.other.color = data.hc;
+        }
+        //Store the server time (this is offset by the latency in the network, by the time we get it)
         this.server_time = data.t;
             //Update our local offset time from the last server update
         this.client_time = this.server_time - (this.net_offset/1000);
@@ -958,6 +1045,7 @@ game_core.prototype.client_update = function() {
     }
 
         //Now they should have updated, we can draw the entity
+    console.log("color: "+ this.players.other.color);
     this.players.other.draw();
 
         //When we are doing client side prediction, we smooth out our position
@@ -965,6 +1053,7 @@ game_core.prototype.client_update = function() {
     this.client_update_local_position();
 
         //And then we finally draw
+    console.log("Player: " + this.players.self.state + " color: "+ this.players.self.color);
     this.players.self.draw();
 
 
@@ -972,12 +1061,17 @@ game_core.prototype.client_update = function() {
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //alert('test here');
 
-    var temp = new level_1();
-    var walls = temp.walls;
+    if (!global_level){
+        global_level = new level_1();
+    }
+    var walls = global_level.walls;
     for(var i = 0; i < walls.length; ++i) {
         walls[i].draw();
+        console.log("Drew thing");
        // alert("test");
     } 
+    var tiles = global_level.tiles;
+    tiles[0].draw();
     
     /*var testWall = new game_wall(50,5,1,20);
     testWall.draw();
